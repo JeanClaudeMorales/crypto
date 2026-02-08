@@ -6,6 +6,11 @@ export default defineConfig({
   server: {
     host: true, // Allow connections from any host
     port: 5173,
+    allowedHosts: [
+      'emily-crypto-web.dbwfzc.easypanel.host',
+      '.easypanel.host',
+      'localhost',
+    ],
     proxy: {
       '/api': {
         target: 'http://localhost:4000',
