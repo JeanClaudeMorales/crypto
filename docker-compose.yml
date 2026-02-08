@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:16
+    container_name: zve_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zve_crypto
+    ports:
+      - "5432:5432"
+    volumes:
+      - zve_pg:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: zve_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - zve_redis:/data
+    command: redis-server --appendonly yes
+
+  server:
+    build:
+      context: ./server
+      target: dev
+    container_name: zve_server
+    environment:
+      PORT: 4000
+      NODE_ENV: development
+      CORS_ORIGIN: http://localhost:5173
+      JWT_SECRET: change-me-super-secret
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/zve_crypto?schema=public
+      REDIS_URL: redis://redis:6379
+      MARKET_DATA_PROVIDER: binance
+      BINANCE_BASE_URL: https://api.binance.com
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./server:/app
+
+  web:
+    build:
+      context: .
+    container_name: zve_web
+    environment:
+      VITE_API_URL: http://localhost:4000
+    depends_on:
+      - server
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+
+volumes:
+  zve_pg:
+  zve_redis:

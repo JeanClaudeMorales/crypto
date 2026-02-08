@@ -1,0 +1,330 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TxType {
+  deposit
+  withdraw
+  swap
+  buy
+  sell
+}
+
+enum TxStatus {
+  pending
+  completed
+  failed
+}
+
+enum AlertDirection {
+  above
+  below
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  wallets       Wallet[]
+  transactions  Transaction[]
+  orders        Order[]
+  watchlist     WatchlistItem[]
+  notifications Notification[]
+  alerts        PriceAlert[]
+  tickets       SupportTicket[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+  roles         UserRole[]
+  twoFactorSecret TwoFactorSecret?
+  devices       UserDevice[]
+}
+
+model Role {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  users       UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  description String?
+  roles       RolePermission[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model Asset {
+  id        String   @id @default(cuid())
+  symbol    String   @unique // BTC, ETH, USDT...
+  name      String
+  decimals  Int      @default(8)
+  iconUrl   String?
+  createdAt DateTime @default(now())
+
+  marketsBase  Market[] @relation("BaseAsset")
+  marketsQuote Market[] @relation("QuoteAsset")
+
+  wallets      Wallet[]
+  transactions Transaction[]
+  ordersFrom   Order[] @relation("OrderFromAsset")
+  ordersTo     Order[] @relation("OrderToAsset")
+}
+
+model Market {
+  id         String   @id @default(cuid())
+  symbol     String   @unique // BTCUSDT
+  baseAssetId  String
+  quoteAssetId String
+  provider   String   @default("synthetic")
+  status     String   @default("active")
+  createdAt  DateTime @default(now())
+
+  baseAsset  Asset @relation("BaseAsset", fields: [baseAssetId], references: [id])
+  quoteAsset Asset @relation("QuoteAsset", fields: [quoteAssetId], references: [id])
+
+  candles    Candle[]
+  watchlist  WatchlistItem[]
+  alerts     PriceAlert[]
+}
+
+model Candle {
+  id        String   @id @default(cuid())
+  marketId  String
+  interval  String   // 1m, 1h, 1d...
+  openTime  DateTime
+  closeTime DateTime
+  open      Float
+  high      Float
+  low       Float
+  close     Float
+  volume    Float
+  source    String   @default("synthetic")
+  createdAt DateTime @default(now())
+
+  market Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@index([marketId, interval, openTime])
+  @@unique([marketId, interval, openTime])
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String
+  assetId   String
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, assetId])
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  userId    String
+  assetId   String
+  type      TxType
+  status    TxStatus @default(pending)
+  amount    Float
+  amountUsd Float
+  address   String?
+  network   String?
+  txHash    String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  userId      String
+  status      String   @default("completed") // for demo
+  kind        String   // swap/buy/sell
+  fromAssetId String
+  toAssetId   String
+  fromAmount  Float
+  toAmount    Float
+  quotePrice  Float
+  feeUsd      Float
+  slippageBps Int      @default(50)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fromAsset Asset @relation("OrderFromAsset", fields: [fromAssetId], references: [id])
+  toAsset   Asset @relation("OrderToAsset", fields: [toAssetId], references: [id])
+
+  fills OrderFill[]
+}
+
+model OrderFill {
+  id        String   @id @default(cuid())
+  orderId   String
+  price     Float
+  amount    Float
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model WatchlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  marketId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  market Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, marketId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   @default("info")
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model PriceAlert {
+  id        String         @id @default(cuid())
+  userId    String
+  marketId  String
+  direction AlertDirection
+  price     Float
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  market Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+}
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  userId    String
+  subject   String
+  message   String
+  status    String   @default("open")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String?
+  entityId  String?
+  ip        String?
+  userAgent String?
+  data      Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+// Security Models - Added for Phase 2
+
+model TwoFactorSecret {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  secret      String   // Encrypted TOTP secret
+  isEnabled   Boolean  @default(false)
+  backupCodes Json     // Array of backup codes (hashed)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserDevice {
+  id          String   @id @default(cuid())
+  userId      String
+  fingerprint String   // Device fingerprint hash
+  name        String?  // User-friendly name (e.g., "Chrome on Windows")
+  userAgent   String?
+  isTrusted   Boolean  @default(false)
+  lastSeenAt  DateTime @default(now())
+  lastIp      String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fingerprint])
+  @@index([userId, isTrusted])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  success   Boolean
+  ip        String
+  userAgent String?
+  reason    String?  // e.g., "invalid_password", "2fa_failed", "account_locked"
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ip, createdAt])
+}

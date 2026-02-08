@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base */
+:root { color-scheme: dark; }
+html, body {
+  height: 100%;
+  background: theme('colors.bg.main');
+}
+body {
+  margin: 0;
+  font-family: theme('fontFamily.sans');
+  background-color: #0F111A;
+  color: white;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Scrollbar utilities */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Glass */
+.glass-panel {
+  background: rgba(24, 27, 38, 0.68);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
