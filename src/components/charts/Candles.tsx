@@ -5,8 +5,10 @@ import type { Candle } from '../../types/domain';
 export function CandlesChart({ candles }: { candles: Candle[] }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<any>(null);
 
-  const data: CandlestickData[] = useMemo(() => {
+  // Memoize data transformation to avoid recalculating on every render
+  const data = useMemo(() => {
     return candles.map(c => ({
       time: Math.floor(c.t / 1000) as any,
       open: c.o,
@@ -19,8 +21,9 @@ export function CandlesChart({ candles }: { candles: Candle[] }) {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Create Chart only once
     const chart = createChart(containerRef.current, {
-      autoSize: true,
+      autoSize: true, // Let library handle resize efficiently
       layout: { background: { color: 'transparent' }, textColor: 'rgba(255,255,255,0.75)' },
       grid: { vertLines: { color: 'rgba(255,255,255,0.04)' }, horzLines: { color: 'rgba(255,255,255,0.04)' } },
       rightPriceScale: { borderColor: 'rgba(255,255,255,0.08)' },
@@ -37,12 +40,14 @@ export function CandlesChart({ candles }: { candles: Candle[] }) {
       wickUpColor: '#049F6C',
     });
 
-    series.setData(data);
-    chart.timeScale().fitContent();
-
+    seriesRef.current = series;
     chartRef.current = chart;
 
-    const ro = new ResizeObserver(() => chart.timeScale().fitContent());
+    // Use a ResizeObserver that doesn't trigger state updates, just chart resize
+    const ro = new ResizeObserver((entries) => {
+      if (entries.length === 0 || !entries[0].contentRect) return;
+      chart.timeScale().fitContent();
+    });
     ro.observe(containerRef.current);
 
     return () => {
@@ -52,6 +57,15 @@ export function CandlesChart({ candles }: { candles: Candle[] }) {
         chartRef.current = null;
       }
     };
+  }, []); // Run once on mount
+
+  // Update data separately when it changes
+  useEffect(() => {
+    if (seriesRef.current && data.length > 0) {
+      seriesRef.current.setData(data);
+      // Only fit content on initial load or significant data changes?
+      // chartRef.current?.timeScale().fitContent(); 
+    }
   }, [data]);
 
   return <div ref={containerRef} className="w-full h-[320px]" />;

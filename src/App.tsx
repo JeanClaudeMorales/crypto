@@ -24,6 +24,7 @@ import { Notifications } from './routes/app/Notifications';
 import { Profile } from './routes/app/Profile';
 import { Settings } from './routes/app/Settings';
 import { Support } from './routes/app/Support';
+import { AdminPortal } from './routes/admin/AdminPortal';
 
 const qc = new QueryClient({
   defaultOptions: { queries: { staleTime: 15_000, refetchOnWindowFocus: false, retry: 1 } }
@@ -55,6 +56,7 @@ const router = createBrowserRouter([
           { path: 'profile', element: <Profile /> },
           { path: 'settings', element: <Settings /> },
           { path: 'support', element: <Support /> },
+          { path: 'admin', element: <AdminPortal /> },
         ],
       },
     ],
