@@ -88,7 +88,6 @@ export const twoFactorRoutes: FastifyPluginAsync = async (app) => {
             tags: ['2FA'],
             summary: 'Enable 2FA',
             security: [{ bearerAuth: [] }],
-            body: EnableTwoFactorSchema,
         },
     }, async (req, reply) => {
         const { token } = EnableTwoFactorSchema.parse(req.body);
@@ -132,7 +131,6 @@ export const twoFactorRoutes: FastifyPluginAsync = async (app) => {
             tags: ['2FA'],
             summary: 'Disable 2FA',
             security: [{ bearerAuth: [] }],
-            body: DisableTwoFactorSchema,
         },
     }, async (req, reply) => {
         const { token } = DisableTwoFactorSchema.parse(req.body);
