@@ -18,10 +18,12 @@ export function getUserId(req: FastifyRequest) {
 
 export function registerAuthDecorators(app: FastifyInstance) {
   app.decorate('auth', requireAuth);
+  app.decorate('authenticate', requireAuth); // Alias for routes expecting authenticate
 }
 
 declare module 'fastify' {
   interface FastifyInstance {
     auth: typeof requireAuth;
+    authenticate: typeof requireAuth;
   }
 }
