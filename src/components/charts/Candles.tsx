@@ -18,11 +18,6 @@ export function CandlesChart({ candles }: { candles: Candle[] }) {
 
   useEffect(() => {
     if (!containerRef.current) return;
-    // Cleanup previous chart
-    if (chartRef.current) {
-      chartRef.current.remove();
-      chartRef.current = null;
-    }
 
     const chart = createChart(containerRef.current, {
       autoSize: true,
@@ -52,7 +47,10 @@ export function CandlesChart({ candles }: { candles: Candle[] }) {
 
     return () => {
       ro.disconnect();
-      chart.remove();
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
     };
   }, [data]);
 
