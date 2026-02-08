@@ -10,9 +10,26 @@ import { env } from './lib/env.js';
 import { registerAuthDecorators } from './lib/auth.js';
 import { getRedisClient } from './lib/redis.js';
 
+import { depositsRoutes } from './routes/deposits.js';
+import { webhooksRoutes } from './routes/webhooks.js';
 import { authRoutes } from './routes/auth.js';
 import { meRoutes } from './routes/me.js';
 import { marketsRoutes } from './routes/markets.js';
+
+// ... (existing imports)
+
+const app = Fastify({
+  logger: true,
+});
+
+// ... (existing code)
+
+// Register Routes
+app.register(authRoutes, { prefix: '/auth' });
+app.register(meRoutes, { prefix: '/me' });
+app.register(depositsRoutes, { prefix: '/deposits' });
+app.register(webhooksRoutes, { prefix: '/webhooks' });
+// ... (existing routes)
 import { portfolioRoutes } from './routes/portfolio.js';
 import { transactionsRoutes } from './routes/transactions.js';
 import { swapRoutes } from './routes/swap.js';

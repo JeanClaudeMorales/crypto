@@ -10,6 +10,8 @@ const EnvSchema = z.object({
   REDIS_URL: z.string().default('redis://localhost:6379'),
   MARKET_DATA_PROVIDER: z.string().default('synthetic'),
   BINANCE_BASE_URL: z.string().default('https://api.binance.com'),
+  BINANCE_PAY_API_KEY: z.string().default('placeholder_key'),
+  BINANCE_PAY_SECRET_KEY: z.string().default('placeholder_secret'),
 });
 
 export const env = EnvSchema.parse(process.env);

@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Chip } from '../../components/ui/Chip';
 import { useDeposit, useHoldings, useWithdraw } from '../../hooks/queries';
+import { DepositModal } from '../../components/dashboard/DepositModal';
 
 function fmt(n: number) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 6 });
@@ -20,17 +21,22 @@ export function Wallet() {
   const [amount, setAmount] = useState('50');
   const [network, setNetwork] = useState('ERC20');
   const [address, setAddress] = useState('0x0000000000000000000000000000000000000000');
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const a = Number(amount || 0);
 
+  // New Deposit Logic: Open Modal
   async function onDeposit() {
-    await depositM.mutateAsync({ asset, amount: a, network });
+    setIsDepositModalOpen(true);
   }
+
   async function onWithdraw() {
     await withdrawM.mutateAsync({ asset, amount: a, address, network });
   }
 
   return (
     <div className="pt-10 pb-28">
+      <DepositModal isOpen={isDepositModalOpen} onClose={() => setIsDepositModalOpen(false)} />
+
       <div className="flex items-end justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold">Wallet</h1>
@@ -47,7 +53,7 @@ export function Wallet() {
               <div key={h.asset} className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center font-bold">
-                    {h.asset.slice(0,1)}
+                    {h.asset.slice(0, 1)}
                   </div>
                   <div>
                     <div className="font-semibold">{h.asset}</div>
@@ -69,24 +75,15 @@ export function Wallet() {
         <div className="space-y-4">
           <Card className="p-5">
             <div className="flex items-center justify-between">
-              <div className="text-white/60 text-sm">Deposit</div>
-              <Chip tone="success">Sim</Chip>
+              <div className="text-white/60 text-sm">Deposit (Binance Pay)</div>
+              <Chip tone="success">New</Chip>
             </div>
 
             <div className="mt-3 space-y-3">
-              <div className="flex gap-2">
-                <select value={asset} onChange={(e) => setAsset(e.target.value)} className="h-12 rounded-2xl bg-bg-input/60 border border-white/10 px-3 text-sm outline-none">
-                  {Array.from(new Set(['USDT','USDC','BTC','ETH','SOL','LINK', ...assets])).map(a => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
-                </select>
-                <Input placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" className="flex-1" />
-              </div>
-              <Input placeholder="Network (ERC20/TRC20...)" value={network} onChange={(e) => setNetwork(e.target.value)} />
-              <Button disabled={depositM.isPending || a <= 0} onClick={onDeposit}>
-                {depositM.isPending ? 'Depositando…' : 'Depositar'}
+              <p className="text-sm text-white/60 mb-2">Deposita USDT al instante usando Binance Pay.</p>
+              <Button onClick={onDeposit} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black">
+                Depositar con Binance Pay
               </Button>
-              {depositM.isSuccess && <div className="text-xs text-success">Depósito registrado.</div>}
             </div>
           </Card>
 
@@ -99,7 +96,7 @@ export function Wallet() {
             <div className="mt-3 space-y-3">
               <div className="flex gap-2">
                 <select value={asset} onChange={(e) => setAsset(e.target.value)} className="h-12 rounded-2xl bg-bg-input/60 border border-white/10 px-3 text-sm outline-none">
-                  {Array.from(new Set(['USDT','USDC','BTC','ETH','SOL','LINK', ...assets])).map(a => (
+                  {Array.from(new Set(['USDT', 'USDC', 'BTC', 'ETH', 'SOL', 'LINK', ...assets])).map(a => (
                     <option key={a} value={a}>{a}</option>
                   ))}
                 </select>

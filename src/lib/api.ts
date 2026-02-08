@@ -102,6 +102,22 @@ export const api = {
     return request('/transactions/deposit', { method: 'POST', body: JSON.stringify(payload) });
   },
 
+  async createDeposit(amount: number) {
+    return request<{
+      prepayId: string;
+      terminalType: string;
+      expireTime: number;
+      qrcodeLink: string;
+      qrContent: string;
+      checkoutUrl: string;
+      deeplink: string;
+      universalUrl: string;
+    }>('/deposits/create', {
+      method: 'POST',
+      body: JSON.stringify({ amount })
+    });
+  },
+
   async withdraw(payload: { asset: string; amount: number; address: string; network?: string }) {
     return request('/transactions/withdraw', { method: 'POST', body: JSON.stringify(payload) });
   },
